@@ -4,7 +4,7 @@ fastapi
 git+https://github.com/InternLM/lagent.git
 gradio
 janus
-lmdeploy
+# lmdeploy
 pyvis
 sse-starlette
 termcolor

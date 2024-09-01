@@ -1,8 +1,8 @@
 from datetime import datetime
 
 from lagent.actions import ActionExecutor, BingBrowser
-from lagent.llms import INTERNLM2_META, LMDeployServer
-
+# from lagent.llms import INTERNLM2_META, LMDeployServer
+import mindsearch.agent.models as llm_factory
 from mindsearch.agent.mindsearch_agent import (MindSearchAgent,
                                                MindSearchProtocol)
 from mindsearch.agent.mindsearch_prompt import (
@@ -11,16 +11,27 @@ from mindsearch.agent.mindsearch_prompt import (
     searcher_input_template_cn, searcher_input_template_en,
     searcher_system_prompt_cn, searcher_system_prompt_en)
 
-lang = 'cn'
-llm = LMDeployServer(path='internlm/internlm2_5-7b-chat',
-                     model_name='internlm2',
-                     meta_template=INTERNLM2_META,
-                     top_p=0.8,
-                     top_k=1,
-                     temperature=0,
-                     max_new_tokens=8192,
-                     repetition_penalty=1.02,
-                     stop_words=['<|im_end|>'])
+LLM = {}
+lang = 'en'
+model_format = 'gpt4'
+# llm = LMDeployServer(path='internlm/internlm2_5-7b-chat',
+#                      model_name='internlm2',
+#                      meta_template=INTERNLM2_META,
+#                      top_p=0.8,
+#                      top_k=1,
+#                      temperature=0,
+#                      max_new_tokens=8192,
+#                      repetition_penalty=1.02,
+#                      stop_words=['<|im_end|>'])
+
+llm = LLM.get(model_format, None)
+if llm is None:
+    llm_cfg = getattr(llm_factory, model_format)
+    if llm_cfg is None:
+        raise NotImplementedError
+    llm_cfg = llm_cfg.copy()
+    llm = llm_cfg.pop('type')(**llm_cfg)
+    LLM[model_format] = llm
 
 agent = MindSearchAgent(
     llm=llm,
