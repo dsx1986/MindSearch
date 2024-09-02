@@ -4,6 +4,7 @@ import queue
 import random
 import re
 import threading
+import time
 import uuid
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -377,10 +378,26 @@ class MindSearchAgent(BaseAgent):
         ordered_nodes = []
         active_node = None
 
+        total_wait_time = 0
+        wait_increment = 2  # wait for 2 seconds in each loop
+        max_wait_time = 60  # total wait time should not exceed 60 seconds
+
         while True:
             try:
-                item = self.local_dict.get('graph').searcher_resp_queue.get(
-                    timeout=60)
+                local_graph = self.local_dict.get('graph')
+                
+                # Handle the case where local_graph is None
+                while local_graph is None and total_wait_time < max_wait_time:
+                    logger.info(f"Local graph is not ready, waiting for {wait_increment} seconds.")
+                    time.sleep(wait_increment)
+                    total_wait_time += wait_increment
+                    local_graph = self.local_dict.get('graph')
+                
+                if local_graph is None:
+                    logger.error("Local graph is still not ready after waiting for 60 seconds.")
+                    break
+
+                item = local_graph.searcher_resp_queue.get(timeout=60)
                 if item is WebSearchGraph.end_signal:
                     for node_name in ordered_nodes:
                         # resp = None
